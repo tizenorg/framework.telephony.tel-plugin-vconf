@@ -6,7 +6,7 @@ Summary:    Telephony Vconf storage plugin
 Version:    %{major}.%{minor}.%{patchlevel}
 Release:    1
 Group:      System/Libraries
-License:    Apache
+License:    Apache-2.0
 Source0:    tel-plugin-vconf-%{version}.tar.gz
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
@@ -77,9 +77,10 @@ vconftool set -t bool db/telephony/flight_mode 0 -i -f
 %install
 %make_install
 mkdir -p %{buildroot}/usr/share/license
+cp LICENSE %{buildroot}/usr/share/license/%{name}
 
 %files
 %manifest tel-plugin-vconf.manifest
 %defattr(-,root,root,-)
 %{_libdir}/telephony/plugins/vconf-plugin*
-/usr/share/license/tel-plugin-vconf
+/usr/share/license/%{name}
