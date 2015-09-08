@@ -11,7 +11,7 @@ SET(CMAKE_INSTALL_PREFIX "${PREFIX}")
 
 # Set required packages
 INCLUDE(FindPkgConfig)
-pkg_check_modules(pkgs REQUIRED vconf glib-2.0 gthread-2.0 tcore dlog)
+pkg_check_modules(pkgs REQUIRED vconf glib-2.0 tcore)
 
 FOREACH(flag ${pkgs_CFLAGS})
 	SET(EXTRA_CFLAGS "${EXTRA_CFLAGS} ${flag}")
@@ -20,13 +20,26 @@ ENDFOREACH(flag)
 
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include/)
 
-SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${EXTRA_CFLAGS} -Werror -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wdeclaration-after-statement -Wmissing-declarations -Wredundant-decls -Wcast-align")
+SET(ADDITIONAL_CFLAGS "-Wall -Wno-array-bounds -Wno-empty-body -Wno-ignored-qualifiers -Wshadow -Wwrite-strings -Wswitch-default -fno-omit-frame-pointer -fno-optimize-sibling-calls -fno-strict-aliasing -fno-unroll-loops -fsigned-char -fstrict-overflow -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wcast-qual")
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${EXTRA_CFLAGS}")
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wextra -fvisibility=hidden -fPIC")
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-parameter -Wno-missing-field-initializers -Wdeclaration-after-statement -Wmissing-declarations -Wredundant-decls -Wcast-align")
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${ADDITIONAL_CFLAGS}")
 
-ADD_DEFINITIONS("-DFEATURE_DLOG_DEBUG")
+### Purge unused code ###
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fdata-sections -ffunction-sections -Wl,--gc-sections")
+
+ADD_DEFINITIONS("-DFEATURE_TLOG_DEBUG")
 ADD_DEFINITIONS("-DTCORE_LOG_TAG=\"SP_VCONF\"")
+ADD_DEFINITIONS("-DPLUGIN_VERSION=${VERSION}")
+ADD_DEFINITIONS("-DEXPORT_API=__attribute__((visibility(\"default\")))")
+
+IF (TIZEN_FEATURE_DSDS)
+        ADD_DEFINITIONS("-DTIZEN_FEATURE_DSDS")
+ENDIF (TIZEN_FEATURE_DSDS)
 
 MESSAGE(${CMAKE_C_FLAGS})
-MESSAGE(${CMAKE_EXE_LINKER_FLAGS})
+MESSAGE(${pkgs_LDFLAGS})
 
 SET(SRCS
 		src/desc-vconf.c
@@ -39,7 +52,14 @@ TARGET_LINK_LIBRARIES(vconf-plugin ${pkgs_LDFLAGS})
 SET_TARGET_PROPERTIES(vconf-plugin PROPERTIES PREFIX "" OUTPUT_NAME vconf-plugin)
 
 
-
 # install
 INSTALL(TARGETS vconf-plugin
 		LIBRARY DESTINATION lib/telephony/plugins)
+INSTALL(FILES ${CMAKE_SOURCE_DIR}/LICENSE DESTINATION /usr/share/license RENAME tel-plugin-vconf)
+
+# install FOTA script
+IF (MODEM_ALWAYS_ON)
+INSTALL(PROGRAMS ${CMAKE_SOURCE_DIR}/fota/modem_always_on/on/500.tel-plugin-vconf.patch.sh DESTINATION /etc/opt/upgrade/)
+ELSE (MODEM_ALWAYS_ON)
+INSTALL(PROGRAMS ${CMAKE_SOURCE_DIR}/fota/modem_always_on/auto/500.tel-plugin-vconf.patch.sh DESTINATION /etc/opt/upgrade/)
+ENDIF (MODEM_ALWAYS_ON)
