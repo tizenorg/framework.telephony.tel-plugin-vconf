@@ -34,15 +34,25 @@ ADD_DEFINITIONS("-DTCORE_LOG_TAG=\"SP_VCONF\"")
 ADD_DEFINITIONS("-DPLUGIN_VERSION=${VERSION}")
 ADD_DEFINITIONS("-DEXPORT_API=__attribute__((visibility(\"default\")))")
 
-IF (TIZEN_FEATURE_DSDS)
-        ADD_DEFINITIONS("-DTIZEN_FEATURE_DSDS")
-ENDIF (TIZEN_FEATURE_DSDS)
+IF (TIZEN_FEATURE_CDMA)
+	ADD_DEFINITIONS("-DTIZEN_FEATURE_CDMA")
+ENDIF (TIZEN_FEATURE_CDMA)
+IF(PREPAID_SIM_APN_SUPPORT)
+	ADD_DEFINITIONS("-DPREPAID_SIM_APN_SUPPORT")
+ENDIF(PREPAID_SIM_APN_SUPPORT)
 
 MESSAGE(${CMAKE_C_FLAGS})
 MESSAGE(${pkgs_LDFLAGS})
 
+INCLUDE_DIRECTORIES(
+	${CMAKE_SOURCE_DIR}/include
+)
+
 SET(SRCS
-		src/desc-vconf.c
+	src/desc-vconf.c
+	src/vconf_main.c
+	src/vconf_core.c
+	src/vconf_handler.c
 )
 
 
@@ -52,14 +62,8 @@ TARGET_LINK_LIBRARIES(vconf-plugin ${pkgs_LDFLAGS})
 SET_TARGET_PROPERTIES(vconf-plugin PROPERTIES PREFIX "" OUTPUT_NAME vconf-plugin)
 
 
+
 # install
 INSTALL(TARGETS vconf-plugin
 		LIBRARY DESTINATION lib/telephony/plugins)
 INSTALL(FILES ${CMAKE_SOURCE_DIR}/LICENSE DESTINATION /usr/share/license RENAME tel-plugin-vconf)
-
-# install FOTA script
-IF (MODEM_ALWAYS_ON)
-INSTALL(PROGRAMS ${CMAKE_SOURCE_DIR}/fota/modem_always_on/on/500.tel-plugin-vconf.patch.sh DESTINATION /etc/opt/upgrade/)
-ELSE (MODEM_ALWAYS_ON)
-INSTALL(PROGRAMS ${CMAKE_SOURCE_DIR}/fota/modem_always_on/auto/500.tel-plugin-vconf.patch.sh DESTINATION /etc/opt/upgrade/)
-ENDIF (MODEM_ALWAYS_ON)
